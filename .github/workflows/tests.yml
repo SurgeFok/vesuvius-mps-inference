@@ -1,0 +1,26 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # torch changes what MPS supports between releases; a pass today is not a
+    # pass next month.
+    - cron: "0 6 * * 1"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install --upgrade pip
+      - run: pip install pytest --index-url https://pypi.org/simple
+      - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: python -m pytest tests/ -v
