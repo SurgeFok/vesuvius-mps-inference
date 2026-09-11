@@ -94,6 +94,32 @@ class TestGpuIdsStayCudaOnly:
             select_device("auto", gpu_ids=(too_high,))
 
 
+@pytest.mark.skipif(not HAVE_CUDA, reason="needs CUDA")
+class TestCudaBranch:
+    def test_auto_and_explicit_cuda_resolve_on_hardware(self):
+        assert select_device("auto").type == "cuda"
+        assert select_device("cuda").type == "cuda"
+
+    def test_gpu_id_zero_selects_cuda_zero(self):
+        device = select_device("auto", gpu_ids=(0,))
+        assert (device.type, device.index) == ("cuda", 0)
+
+    def test_fp16_autocast_forward_matches_fp32(self):
+        """Exercise the autocast branch used by the inference entrypoints."""
+        device = torch.device("cuda")
+        model = torch.nn.Sequential(
+            torch.nn.Conv3d(1, 8, 3, padding=1), torch.nn.ReLU()
+        ).to(device)
+        x = torch.randn(2, 1, 16, 64, 64, device=device)
+        with torch.no_grad():
+            reference = model(x).float()
+            with torch.autocast(device_type=device.type, enabled=True, dtype=torch.float16):
+                out = model(x)
+        torch.cuda.synchronize()
+        assert torch.isfinite(out).all()
+        assert torch.allclose(out.float(), reference, atol=2e-2, rtol=2e-2)
+
+
 @pytest.mark.skipif(not HAVE_MPS, reason="needs Apple Silicon")
 class TestMpsBranch:
     def test_auto_selects_mps_when_cuda_is_absent(self):

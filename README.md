@@ -138,29 +138,31 @@ pip install pytest torch
 python -m pytest tests/ -v
 ```
 
-21 tests. The CPU cases and the error paths run anywhere, so CI is meaningful on a plain ubuntu
+24 tests. The CPU cases and the error paths run anywhere, so CI is meaningful on a plain ubuntu
 runner. The MPS cases skip unless Metal is present, so a green CI badge on its own does not
-prove the MPS path works. That part was checked on hardware:
+prove the hardware paths work. Both were checked on their respective hardware:
 
-- Linux x86_64, no CUDA, no MPS: 14 passed, 7 skipped
-- M5 Pro, macOS 26.5.1, MPS: 20 passed, 1 skipped
+- Linux x86_64, no CUDA, no MPS: 14 passed, 10 skipped
+- M5 Pro, macOS 26.5.1, MPS: 20 passed, 4 skipped
+- GTX 1070, Ubuntu 24.04.3, CUDA 11.8: 17 passed, 7 skipped
 
-Between the two, every test runs somewhere.
+Between the three, every test runs somewhere.
 
-### The CUDA path is the gap
+### CUDA hardware result
 
-I have no machine with a usable CUDA GPU, so I could not run the CUDA branch. It is the
-default path, and this patch touches it, so here is exactly what I did instead.
+The CUDA run used an NVIDIA GeForce GTX 1070 (8 GB, compute capability 6.1), driver
+570.211.01, torch 2.2.0+cu118 and Python 3.12.3. The full suite completed in 1.88 seconds:
+17 passed and 7 skipped. The skips are the six MPS-only cases and the test that requires CUDA
+to be absent.
 
-`select_device()` keeps the original control flow for CUDA and reproduces the two error
-strings character for character, including `visible device count is N`. Five tests in
-`TestCudaDecisionsWithoutCudaHardware` fake `torch.cuda.is_available` and
-`torch.cuda.device_count` to check the decisions: cuda outranks mps under `auto`, `--gpus 2,3`
-resolves to `cuda:2`, an out-of-range ordinal reports the visible count, `--device cpu`
-overrides available CUDA, and the missing-CUDA message is byte-identical to the old one.
+Three hardware-gated tests cover the path the entrypoints use. `auto` and explicit `cuda`
+both resolve to CUDA; `--gpus 0` resolves to `cuda:0`; and a real 3D convolution under CUDA
+fp16 autocast produces finite output matching the fp32 reference within the pinned tolerance.
+The pre-existing out-of-range ordinal test also ran against the real one-device count.
 
-Those tests cover the resolver's logic on its own. Confirming that torch still behaves on real
-CUDA hardware needs a CUDA box, and running `pytest tests/ -v` on one is the check I am missing.
+The five fake-backend tests remain because they cover decisions a one-GPU machine cannot
+produce, such as selecting ordinals 2 and 3 and reporting a visible count of two. The hardware
+run complements those tests rather than replacing them.
 
 ## Licence
 
