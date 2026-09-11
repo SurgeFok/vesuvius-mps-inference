@@ -1,5 +1,7 @@
 # vesuvius-mps-inference
 
+[![tests](https://github.com/SurgeFok/vesuvius-mps-inference/actions/workflows/tests.yml/badge.svg)](https://github.com/SurgeFok/vesuvius-mps-inference/actions/workflows/tests.yml)
+
 Ink detection inference in [villa](https://github.com/ScrollPrize/villa) runs on the CPU on
 Apple Silicon while the GPU sits idle. It prints no error and no warning. This repository
 fixes it and measures the result: **2.67x** on an M5 Pro, with output that matches the CPU
