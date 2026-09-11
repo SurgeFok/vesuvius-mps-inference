@@ -4,8 +4,8 @@
 
 Ink detection inference in [villa](https://github.com/ScrollPrize/villa) runs on the CPU on
 Apple Silicon while the GPU sits idle. It prints no error and no warning. This repository
-fixes it and measures the result: **2.67x** on an M5 Pro, with output that matches the CPU
-path to within one uint8 level.
+fixes it and measures the result: **2.64x** on an M5 Pro over five runs a side, with output
+that matches the CPU path to within one uint8 level.
 
 I could not find an open issue for this, so as far as I can tell it is unreported.
 
@@ -58,25 +58,53 @@ Applied diff: [`mps-inference.patch`](mps-inference.patch), against `merge-ink-p
 
 ## Measured, by running it
 
-Real checkpoint `hybrid_3d2d-seed42/step-075000.pth` from
-[`scrollprize/ink_9um`](https://huggingface.co/scrollprize/ink_9um) (132 MB,
-`patch_size [17,128,128]`, `mixed_precision fp16`), through the documented CLI, on an M5 Pro
-with 24 GB unified memory, macOS 26.5.1, torch 2.14.0:
+Reported the way villa's own `AGENTS.md` section 1.4 asks for performance work: command line,
+input, build type, iteration count, and summary statistics rather than one number.
 
-| `--device` | throughput | log line |
-| --- | --- | --- |
-| `mps` | **33.91 block/s** | `mps autocast enabled for inference with dtype=float16` |
-| `cpu` | 12.70 block/s | `Autocast disabled for inference (device=cpu)` |
+**Input:** a 512x512x20 uint8 zarr, giving 49 blocks per run.
+**Checkpoint:** `hybrid_3d2d-seed42/step-075000.pth` from
+[`scrollprize/ink_9um`](https://huggingface.co/scrollprize/ink_9um), 132 MB,
+`patch_size [17,128,128]`, `mixed_precision fp16`.
+**Machine:** Apple M5 Pro, 24 GB unified memory (17.8 GiB recommended MPS budget),
+macOS 26.5.1, torch 2.14.0.
+**Command:**
 
-The `cpu` row is what this machine did before the patch. Comparing the two output TIFFs pixel
-by pixel gives `maxdiff=1` on uint8 and a mean absolute difference of 0.084, with no pixel
-differing by more than one level. That size of gap is what fp16 accumulation produces.
+```bash
+python -m koine_machines.inference.infer input.zarr step-075000.pth out.tif \
+    --batch-size 1 --no-compile --device {mps|cpu}
+```
 
-Two honest caveats. The input was a 512x512 synthetic volume giving 49 blocks, so model load
-and imports dominate wall clock (23.1 s against 25.4 s) and the throughput row is the number
-that means anything. A real segment amortises setup better, so read 2.67x as a floor. And I
-ran with `--no-compile` throughout; `torch.compile` does work on MPS here, but I have not
-tested it in combination.
+**Iterations:** 5 timed runs per device, one warm-up run discarded first. The figure is the
+inference loop's own throughput, so model load and imports are excluded.
+
+| `--device` | blocks | min | median | max | mean | stdev | wall median |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `mps` | 49 | 33.79 | **33.88** | 33.99 | 33.88 | 0.08 | 25.13 s |
+| `cpu` | 49 | 12.65 | **12.83** | 13.18 | 12.88 | 0.22 | 27.42 s |
+
+Median against median, **2.64x**. The spreads do not overlap and are nowhere near each other,
+so the gap is not a sampling artefact. MPS is also the steadier of the two, at 0.08 stdev
+against 0.22.
+
+The `cpu` row is what this machine did before the patch. Log lines separate them:
+`mps autocast enabled for inference with dtype=float16` against
+`Autocast disabled for inference (device=cpu)`.
+
+Reproduce with [`bench.py`](bench.py):
+
+```bash
+python bench.py --input input.zarr --checkpoint step-075000.pth --devices mps cpu --repeats 5
+```
+
+**Output equivalence.** Comparing the two output TIFFs pixel by pixel gives `maxdiff=1` on
+uint8 and a mean absolute difference of 0.084, with no pixel differing by more than one level.
+That size of gap is what fp16 accumulation produces.
+
+**Two caveats.** Wall clock is dominated by model load and imports at this input size (25.13 s
+against 27.42 s median), which is why the throughput column is the one that means anything; a
+real segment amortises setup better, so read 2.64x as a floor. And every run used
+`--no-compile`. `torch.compile` does work on MPS here, but I have not tested it together with
+autocast.
 
 ## What I did not change
 
