@@ -7,7 +7,7 @@ Apple Silicon while the GPU sits idle. It prints no error and no warning. This r
 fixes it and measures the result: **2.64x** on an M5 Pro over five runs a side, with output
 that matches the CPU path to within one uint8 level.
 
-I could not find an open issue for this, so as far as I can tell it is unreported.
+Reported upstream as [ScrollPrize/villa#1764](https://github.com/ScrollPrize/villa/issues/1764).
 
 ## The bug
 
