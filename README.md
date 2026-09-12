@@ -4,8 +4,9 @@
 
 Ink detection inference in [villa](https://github.com/ScrollPrize/villa) runs on the CPU on
 Apple Silicon while the GPU sits idle. It prints no error and no warning. This repository
-fixes it and measures the result: **2.64x** on an M5 Pro over five runs a side, with output
-that matches the CPU path to within one uint8 level.
+fixes it. On a full PHerc0800 surface volume, the MPS path ran the inference loop **5.97x**
+faster and the whole command **2.42x** faster than the CPU path on the same M5 Pro. The two
+output images match to within one uint8 level.
 
 Reported upstream as [ScrollPrize/villa#1764](https://github.com/ScrollPrize/villa/issues/1764).
 
@@ -101,10 +102,50 @@ uint8 and a mean absolute difference of 0.084, with no pixel differing by more t
 That size of gap is what fp16 accumulation produces.
 
 **Two caveats.** Wall clock is dominated by model load and imports at this input size (25.13 s
-against 27.42 s median), which is why the throughput column is the one that means anything; a
-real segment amortises setup better, so read 2.64x as a floor. And every run used
+against 27.42 s median), which is why the throughput column is the one that means anything.
+The full-segment follow-up below measures how that changes on real data. Every run used
 `--no-compile`. `torch.compile` does work on MPS here, but I have not tested it together with
 autocast.
+
+### Full PHerc0800 segment follow-up
+
+I repeated the comparison on the public PHerc0800 segment
+`20251028222030-auto_grown_20251028222030940`, using its
+`8.64um-1.2m-116keV-volume-20250521135224.zarr` surface volume. Level 0 is a
+31x2580x2580 uint8 array. The checkpoint, command options, Mac, and measurement protocol are
+the same as above: one discarded warm-up, then five timed runs per device with batch size 1
+and compilation disabled. Each run scheduled 923 blocks.
+
+| `--device` | min | median | p95 | max | mean | stdev | wall median |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `mps` | 97.66 | **97.94** | 97.97 | 97.97 | 97.89 | 0.13 | **32.92 s** |
+| `cpu` | 16.25 | **16.40** | 16.89 | 16.91 | 16.55 | 0.29 | **79.67 s** |
+
+Median against median, the inference loop is **5.97x** faster on MPS. Median wall time falls
+from 79.67 to 32.92 seconds, a **2.42x** end-to-end speedup. All six runs on each backend,
+including the warm-up, produced the same SHA-256 within that backend. Comparing the retained
+MPS and CPU TIFFs across 6,656,400 pixels gives `maxdiff=1`, mean absolute difference 0.0277,
+and zero pixels differing by more than one level.
+
+As a separate CUDA compatibility check, I ran the patched code with the same input,
+checkpoint, batch size, and measurement protocol on a Linux workstation with an 8 GB NVIDIA
+GTX 1070. That host used driver 570.211.01 and torch 2.2.0+cu118. CUDA measured 49.29 to 50.66
+blocks/s, with a median of 50.31 blocks/s and a median whole-command time of 22.25 seconds.
+All six CUDA outputs had the same SHA-256. Against the retained Mac outputs, the CUDA TIFF
+had `maxdiff=2` and mean absolute differences of 0.0298 from MPS and 0.0343 from CPU.
+
+The CUDA result is not part of the MPS-versus-CPU speedup calculation because it came from a
+different machine and torch build. It verifies that the unchanged CUDA path still completes
+the same full-segment workload and produces numerically equivalent output.
+
+The exact public input path is:
+
+```text
+s3://vesuvius-challenge-open-data/PHerc0800/segments/20251028222030-auto_grown_20251028222030940/surface-volumes/8.64um-1.2m-116keV-volume-20250521135224.zarr/
+```
+
+The per-run measurements, hashes, environment, and output comparison are in
+[`benchmarks/full-pherc0800/results.json`](benchmarks/full-pherc0800/results.json).
 
 ## What I did not change
 

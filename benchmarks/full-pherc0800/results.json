@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "source": {
+    "villa_branch": "merge-ink-pipelines",
+    "villa_commit": "3ea17f54a9b3d5fd1aaf73e1d2c8386dbaa9f30e"
+  },
+  "input": {
+    "sample": "PHerc0800",
+    "segment": "20251028222030-auto_grown_20251028222030940",
+    "url": "s3://vesuvius-challenge-open-data/PHerc0800/segments/20251028222030-auto_grown_20251028222030940/surface-volumes/8.64um-1.2m-116keV-volume-20250521135224.zarr/",
+    "level": "0",
+    "shape": [31, 2580, 2580],
+    "dtype": "uint8",
+    "chunks": [31, 128, 128],
+    "zarray_sha256": "e7d03a00d38bde138994e2d238a1b846735812b338d8f334277676cde9a8b423"
+  },
+  "checkpoint": {
+    "repository": "scrollprize/ink_9um",
+    "path": "hybrid_3d2d-seed42/step-075000.pth",
+    "sha256": "e635558ae6a1a807a7e5ec1e83adfd45bc3c0ac53883ea43f1d4e085d62a9cab"
+  },
+  "environment": {
+    "machine": "Apple M5 Pro",
+    "memory_gib": 24,
+    "os": "macOS 26.5.1 arm64",
+    "python": "3.13.15",
+    "torch": "2.14.0"
+  },
+  "cuda_environment": {
+    "machine": "Linux workstation",
+    "gpu": "NVIDIA GeForce GTX 1070",
+    "gpu_memory_mib": 8192,
+    "driver": "570.211.01",
+    "os": "Linux 6.8.0-124-generic x86_64",
+    "python": "3.12.3",
+    "torch": "2.2.0+cu118"
+  },
+  "method": {
+    "warmups": 1,
+    "timed_repeats": 5,
+    "batch_size": 1,
+    "compile": false,
+    "blocks_per_run": 923
+  },
+  "devices": {
+    "mps": {
+      "blocks_per_second": [97.66, 97.92, 97.94, 97.97, 97.95],
+      "wall_seconds": [33.07985933299642, 33.04217979198438, 32.924835874990094, 32.917003417009255, 32.924794541992014],
+      "throughput_summary": {
+        "min": 97.66,
+        "median": 97.94,
+        "p95": 97.966,
+        "max": 97.97,
+        "mean": 97.888,
+        "stdev": 0.12872451204024973
+      },
+      "wall_summary": {
+        "min": 32.917003417009255,
+        "median": 32.924835874990094,
+        "p95": 33.072323424794014,
+        "max": 33.07985933299642,
+        "mean": 32.97773459179443,
+        "stdev": 0.07725258134281253
+      },
+      "output_sha256": "ab0202e2320596a6ffe820ac825583488e3abbf2b603f2473fbb5d761b013902"
+    },
+    "cpu": {
+      "blocks_per_second": [16.40, 16.39, 16.25, 16.82, 16.91],
+      "wall_seconds": [79.66965195801458, 79.74190700001782, 80.18663070900948, 78.32533429199248, 78.02230020798743],
+      "throughput_summary": {
+        "min": 16.25,
+        "median": 16.40,
+        "p95": 16.892,
+        "max": 16.91,
+        "mean": 16.554,
+        "stdev": 0.29177045772319055
+      },
+      "wall_summary": {
+        "min": 78.02230020798743,
+        "median": 79.66965195801458,
+        "p95": 80.09768596721115,
+        "max": 80.18663070900948,
+        "mean": 79.18916483340436,
+        "stdev": 0.9538220760433743
+      },
+      "output_sha256": "0c2a49d70a7a50d5b650e51609fc748bfd890d7c0bf878cffcf023421da1093e"
+    },
+    "cuda": {
+      "blocks_per_second": [50.66, 49.29, 50.52, 50.31, 49.63],
+      "wall_seconds": [22.145156527869403, 22.746136776171625, 22.194964649155736, 22.252030081115663, 22.800859964452684],
+      "throughput_summary": {
+        "min": 49.29,
+        "median": 50.31,
+        "p95": 50.632000000000005,
+        "max": 50.66,
+        "mean": 50.082,
+        "stdev": 0.5936076145064176
+      },
+      "wall_summary": {
+        "min": 22.145156527869403,
+        "median": 22.252030081115663,
+        "p95": 22.78991532679647,
+        "max": 22.800859964452684,
+        "mean": 22.42782959975302,
+        "stdev": 0.3183970528622522
+      },
+      "output_sha256": "9aebbd0bed9c30cdd8f4176e641cbc26d8c51eb3277986d788e00c7c92ae6643"
+    }
+  },
+  "comparison": {
+    "throughput_median_ratio_mps_over_cpu": 5.971951219512195,
+    "wall_median_ratio_cpu_over_mps": 2.419743468265827,
+    "output_shape": [2580, 2580],
+    "output_pixels": 6656400,
+    "max_absolute_difference": 1,
+    "mean_absolute_difference": 0.02765083228171384,
+    "pixels_different": 184055,
+    "pixels_over_one_level": 0,
+    "cuda_vs_mps": {
+      "max_absolute_difference": 2,
+      "mean_absolute_difference": 0.029777657592692748,
+      "pixels_different": 197533,
+      "pixels_over_one_level": 679
+    },
+    "cuda_vs_cpu": {
+      "max_absolute_difference": 2,
+      "mean_absolute_difference": 0.03431118923141638,
+      "pixels_different": 228386,
+      "pixels_over_one_level": 3
+    }
+  }
+}
