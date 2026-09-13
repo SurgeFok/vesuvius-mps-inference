@@ -9,6 +9,7 @@ faster and the whole command **2.42x** faster than the CPU path on the same M5 P
 output images match to within one uint8 level.
 
 Reported upstream as [ScrollPrize/villa#1764](https://github.com/ScrollPrize/villa/issues/1764).
+The implementation is now proposed in [ScrollPrize/villa#1770](https://github.com/ScrollPrize/villa/pull/1770).
 
 ## The bug
 
